@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Skinning.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Blending_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\LightHelper_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\LightModel_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\BasicTransform_vs.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\PixelLighting_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\PixelLighting_vs.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Skinning_vs.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureLerp_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureScrolling_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Wiggle_vs.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

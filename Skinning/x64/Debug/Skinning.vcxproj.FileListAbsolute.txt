@@ -1,0 +1,25 @@
+E:\Year 2\Computer Graphics\Semester Two\Week 21\Skinning\LightModel_ps.cso
+E:\Year 2\Computer Graphics\Semester Two\Week 21\Skinning\BasicTransform_vs.cso
+E:\Year 2\Computer Graphics\Semester Two\Week 21\Skinning\PixelLighting_ps.cso
+E:\Year 2\Computer Graphics\Semester Two\Week 21\Skinning\PixelLighting_vs.cso
+E:\Year 2\Computer Graphics\Semester Two\Week 21\Skinning\Skinning_vs.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\LightModel_ps.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\BasicTransform_vs.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\PixelLighting_ps.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\PixelLighting_vs.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\Skinning_vs.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\Wiggle_vs.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\TextureScrolling_ps.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\TextureLerp_ps.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\Blending_ps.cso
+C:\Users\aveng\Desktop\Graphics Assignment\Skinning\LightHelper_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Blending_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\LightHelper_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\LightModel_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\BasicTransform_vs.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\PixelLighting_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\PixelLighting_vs.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Skinning_vs.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureLerp_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureScrolling_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Wiggle_vs.cso
