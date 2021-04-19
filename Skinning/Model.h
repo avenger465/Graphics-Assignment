@@ -75,6 +75,19 @@ public:
 
     void SetWorldMatrix(CMatrix4x4 matrix, int node = 0)  { mWorldMatrices[node] = matrix; }
 
+    void SetStates(ID3D11BlendState* BlendState, ID3D11DepthStencilState* DepthStencilState, ID3D11RasterizerState* Rasterizerstate);
+
+    void SetShaderResources(UINT TextureSlot, ID3D11ShaderResourceView* Texture);
+
+    void Setup(ID3D11VertexShader* VertexShader);
+
+    void Setup(ID3D11PixelShader* PixelShader);
+
+    void Setup(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
+  
+
+    void SetShaderResources(UINT TextureSlot, ID3D11ShaderResourceView* Texture, UINT NormalMapSlot, ID3D11ShaderResourceView* NormalMap);
+
 
 	//-------------------------------------
 	// Private data / members

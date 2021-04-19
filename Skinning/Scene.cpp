@@ -38,28 +38,26 @@ const float MOVEMENT_SPEED = 50.0f; // 50 units per second for movement (what a 
 
 
 // Meshes, models and cameras, same meaning as TL-Engine. Meshes prepared in InitGeometry function, Models & camera in InitScene
-//Mesh* gCharacterMesh;
 Mesh* gCrateMesh;
 Mesh* gGroundMesh;
+Mesh* gNormalMappingMesh;
 Mesh* gLightMesh;
 Mesh* gSphereMesh;
-Mesh* gLerpCubeMesh;
-Mesh* gAdditiveBlendingMesh;
-Mesh* gMultiplicativeBlendingMesh;
-Mesh* gAlphaBlendingMesh;
+Mesh* gCubeMesh;
+Mesh* gTrollMesh;
 
-//Model* gCharacter;
 Model* gCrate;
+Model* gNormalMappingCube;
 Model* gGround;
 Model* gSphere;
 Model* gLerpCube;
 Model* gAdditiveBlendingModel;
 Model* gMultiplicativeBlendingModel;
 Model* gAlphaBlendingModel;
-
+Model* gParallaxMappingCube;
+Model* gTrollModel;
 
 Camera* gCamera;
-
 
 // Store lights in an array in this exercise
 const int NUM_LIGHTS = 2;
@@ -72,17 +70,19 @@ CVector3 LightsColour[NUM_LIGHTS] = { {1.0f, 0.8f, 1.0f},
 CVector3 LightsPosition[NUM_LIGHTS] = { { 30, 10, 0 },
                                         { 10, 20, 50 }};
 
-
 // Additional light information
 CVector3 gAmbientColour = { 0.2f, 0.2f, 0.3f }; // Background level of light (slightly bluish to match the far background, which is dark blue)
 float    gSpecularPower = 256; // Specular power controls shininess - same for all models in this app
 
 ColourRGBA gBackgroundColor = { 0.2f, 0.2f, 0.3f, 1.0f };
 
+CVector3 OutlineColour = {1,1,0};
+float OutlineThickness = 0.03f;
+
 // Variables controlling light1's orbiting of the cube
 const float gLightOrbit = 20.0f;
 const float gLightOrbitSpeed = 0.7f;
-
+const float gParallaxDepth = 0.1f;
 
 //--------------------------------------------------------------------------------------
 // Constant Buffers
@@ -98,31 +98,26 @@ ID3D11Buffer*     gPerFrameConstantBuffer; // The GPU buffer that will recieve t
 PerModelConstants gPerModelConstants;      // As above, but constant that change per-model (e.g. world matrix)
 ID3D11Buffer*     gPerModelConstantBuffer; // --"--
 
-
-
 //--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
 
 // DirectX objects controlling textures used in this lab
-//ID3D11Resource*           gCharacterDiffuseSpecularMap    = nullptr; // This object represents the memory used by the texture on the GPU
-//ID3D11ShaderResourceView* gCharacterDiffuseSpecularMapSRV = nullptr; // This object is used to give shaders access to the texture above (SRV = shader resource view)
 
-CTexture* StoneTexture = new CTexture();
-
-CTexture* SphereTexture = new CTexture();
-
-CTexture* BrickTexture = new CTexture();
-
-CTexture* GroundTexture = new CTexture();
-
-CTexture* LightTexture = new CTexture();
-
-CTexture* GlassTexture = new CTexture();
-
-CTexture* MoogleTexture = new CTexture();
-
-
+CTexture* CStoneTexture      = new CTexture();
+CTexture* CSphereTexture     = new CTexture();
+CTexture* CBrickTexture      = new CTexture();
+CTexture* CGroundTexture     = new CTexture();
+CTexture* CLightTexture      = new CTexture();
+CTexture* CGlassTexture      = new CTexture();
+CTexture* CMoogleTexture     = new CTexture();
+CTexture* CWoodNormalTexture = new CTexture();
+CTexture* CPatternTexture    = new CTexture();
+CTexture* CPatternNormal     = new CTexture();
+CTexture* CWallTexture       = new CTexture();
+CTexture* CWallNormalHeight  = new CTexture();
+CTexture* CCellMapTexture    = new CTexture();
+CTexture* CTrollTexture      = new CTexture();
 
 //--------------------------------------------------------------------------------------
 // Initialise scene geometry, constant buffers and states
@@ -135,15 +130,13 @@ bool InitGeometry()
     // Load mesh geometry data, just like TL-Engine this doesn't create anything in the scene. Create a Model for that.
     try 
     {
-        //gCharacterMesh = new Mesh("Woman.x");
-        gCrateMesh     = new Mesh("Cube.x");
-        gGroundMesh    = new Mesh("Ground.x");
-        gLightMesh     = new Mesh("Light.x");
-        gSphereMesh = new Mesh("Sphere.x");
-        gLerpCubeMesh = new Mesh("Cube.x");
-        gAdditiveBlendingMesh = new Mesh("Cube.x");
-        gMultiplicativeBlendingMesh = new Mesh("Cube.x");
-        gAlphaBlendingMesh = new Mesh("Cube.x");
+        gCrateMesh           = new Mesh("Cube.x");
+        gNormalMappingMesh   = new Mesh("Cube.x", true);
+        gGroundMesh          = new Mesh("Ground.x");
+        gLightMesh           = new Mesh("Light.x");
+        gSphereMesh          = new Mesh("Sphere.x");
+        gCubeMesh            = new Mesh("Cube.x");
+        gTrollMesh           = new Mesh("Troll.x");
     }
     catch (std::runtime_error e)  // Constructors cannot return error messages so use exceptions to catch mesh errors (fairly standard approach this)
     {
@@ -151,14 +144,12 @@ bool InitGeometry()
         return false;
     }
 
-
     // Load the shaders required for the geometry we will use (see Shader.cpp / .h)
     if (!LoadShaders())
     {
         gLastError = "Error loading shaders";
         return false;
     }
-
 
     // Create GPU-side constant buffers to receive the gPerFrameConstants and gPerModelConstants structures above
     // These allow us to pass data from CPU to shaders such as lighting information or matrices
@@ -171,23 +162,23 @@ bool InitGeometry()
         return false;
     }
 
-
     //// Load / prepare textures on the GPU ////
 
     // Load textures and create DirectX objects for them
     // The LoadTexture function requires you to pass a ID3D11Resource* (e.g. &gCubeDiffuseMap), which manages the GPU memory for the
     // texture and also a ID3D11ShaderResourceView* (e.g. &gCubeDiffuseMapSRV), which allows us to use the texture in shaders
     // The function will fill in these pointers with usable data. The variables used here are globals found near the top of the file.
-    if (!StoneTexture->LoadTextureFromHelper("StoneDiffuseSpecular.dds") || !SphereTexture->LoadTextureFromHelper("brick1.jpg") ||
-        !BrickTexture->LoadTextureFromHelper("brick1.jpg") || !GroundTexture->LoadTextureFromHelper("WoodDiffuseSpecular.dds") ||
-        !LightTexture->LoadTextureFromHelper("Flare.jpg") || !GlassTexture->LoadTextureFromHelper("Glass.jpg") ||
-        !MoogleTexture->LoadTextureFromHelper("Moogle.png"))
+    if (!CStoneTexture->LoadTextureFromHelper("StoneDiffuseSpecular.dds") || !CSphereTexture->LoadTextureFromHelper("brick1.jpg") ||
+        !CBrickTexture->LoadTextureFromHelper("brick1.jpg") || !CGroundTexture->LoadTextureFromHelper("WoodDiffuseSpecular.dds") ||
+        !CLightTexture->LoadTextureFromHelper("Flare.jpg") || !CGlassTexture->LoadTextureFromHelper("Glass.jpg") ||
+        !CMoogleTexture->LoadTextureFromHelper("Moogle.png") || !CWoodNormalTexture->LoadTextureFromHelper("WoodNormal.dds") ||
+        !CPatternTexture->LoadTextureFromHelper("PatternDiffuseSpecular.dds") || !CPatternNormal->LoadTextureFromHelper("PatternNormal.dds") ||
+        !CWallNormalHeight->LoadTextureFromHelper("WallNormalHeight.dds") || !CWallTexture->LoadTextureFromHelper("WallDiffuseSpecular.dds") ||
+        !CTrollTexture->LoadTextureFromHelper("Red.png") || !CCellMapTexture->LoadTextureFromHelper("CellGradient.png"))
     {
         gLastError = "Error loading textures";
         return false;
     }
-
-
 
   	// Create all filtering modes, blending modes etc. used by the app (see State.cpp/.h)
 	if (!CreateStates())
@@ -199,26 +190,31 @@ bool InitGeometry()
 	return true;
 }
 
-
 // Prepare the scene
 // Returns true on success
 bool InitScene()
 {
     //// Set up scene ////
 
-    //gCharacter = new Model(gCharacterMesh);
-    gCrate     = new Model(gCrateMesh);
-    gGround    = new Model(gGroundMesh);
-    gSphere = new Model(gSphereMesh);
-    gLerpCube = new Model(gLerpCubeMesh);
-    gAdditiveBlendingModel = new Model(gAdditiveBlendingMesh);
-    gMultiplicativeBlendingModel = new Model(gMultiplicativeBlendingMesh);
-    gAlphaBlendingModel = new Model(gAlphaBlendingMesh);
+    gCrate                        = new Model(gCrateMesh);
+    gGround                       = new Model(gGroundMesh);
+    gNormalMappingCube            = new Model(gNormalMappingMesh);
+    gSphere                       = new Model(gSphereMesh);
+    gLerpCube                     = new Model(gCubeMesh);
+    gAdditiveBlendingModel        = new Model(gCubeMesh);
+    gMultiplicativeBlendingModel  = new Model(gCubeMesh);
+    gAlphaBlendingModel           = new Model(gCubeMesh);
+    gParallaxMappingCube          = new Model(gNormalMappingMesh);
+    gTrollModel                   = new Model(gTrollMesh);
 
 	// Initial positions
 	gCrate-> SetPosition({ 18, 5, 18 });
 	gCrate-> SetScale( 1.0f );
 	gCrate-> SetRotation({ 0.0f, 0/*ToRadians(-50.0f) */, 0.0f });
+
+    gNormalMappingCube->SetPosition({ 18, 5, 68 });
+    gNormalMappingCube->SetScale(1.0f);
+    gNormalMappingCube->SetRotation({ 0.0f, 0/*ToRadians(-50.0f) */, 0.0f });
 
     gSphere->SetPosition({ 32, 5, 18 });
     gSphere->SetScale(0.5f);
@@ -240,6 +236,14 @@ bool InitScene()
     gAlphaBlendingModel->SetScale(1.0f);
     gAlphaBlendingModel->SetRotation({ 0.0f, 0.0f, 0.0f });
 
+    gParallaxMappingCube->SetPosition({ 18, 5, 50 });
+    gParallaxMappingCube->SetScale(1.0f);
+    gParallaxMappingCube->SetRotation({ 0.0f, 0.0f, 0.0f });
+
+    gTrollModel->SetPosition({ 32, 0.5f, 50 });
+    gTrollModel->SetScale(4.0f);
+    gTrollModel->SetRotation({ 0.0f, 0.0f, 0.0f });
+
     // Light set-up - using an array this time
     for (int i = 0; i < NUM_LIGHTS; ++i)
     {
@@ -255,28 +259,25 @@ bool InitScene()
     return true;
 }
 
-
 // Release the geometry and scene resources created above
 void ReleaseResources()
 {
     ReleaseStates();
 
-    if (LightTexture->SRVMap)             LightTexture->SRVMap->Release();
-    if (LightTexture->Map)                LightTexture->Map->Release();
-    if (GlassTexture->SRVMap)             GlassTexture->SRVMap->Release();
-    if (GlassTexture->Map)                GlassTexture->Map->Release();
-    if (MoogleTexture->SRVMap)             MoogleTexture->SRVMap->Release();
-    if (MoogleTexture->Map)                MoogleTexture->Map->Release();
-    if (GroundTexture->SRVMap)    GroundTexture->SRVMap->Release();
-    if (GroundTexture->Map)       GroundTexture->Map->Release();
-    if (StoneTexture->SRVMap)            StoneTexture->SRVMap->Release();
-    if (StoneTexture->Map)              StoneTexture->Map->Release();
-    if (SphereTexture->SRVMap)    SphereTexture->SRVMap->Release();
-    if (SphereTexture->Map)       SphereTexture->Map->Release();
-    if (BrickTexture->SRVMap)     BrickTexture->SRVMap->Release();
-    if (BrickTexture->Map)        BrickTexture->Map->Release();
-    //if (gCharacterDiffuseSpecularMapSRV) gCharacterDiffuseSpecularMapSRV->Release();
-    //if (gCharacterDiffuseSpecularMap)    gCharacterDiffuseSpecularMap->Release();
+    if (CLightTexture->SRVMap)  CLightTexture->SRVMap->Release();
+    if (CLightTexture->Map)     CLightTexture->Map->Release();
+    if (CGlassTexture->SRVMap)  CGlassTexture->SRVMap->Release();
+    if (CGlassTexture->Map)     CGlassTexture->Map->Release();
+    if (CMoogleTexture->SRVMap) CMoogleTexture->SRVMap->Release();
+    if (CMoogleTexture->Map)    CMoogleTexture->Map->Release();
+    if (CGroundTexture->SRVMap) CGroundTexture->SRVMap->Release();
+    if (CGroundTexture->Map)    CGroundTexture->Map->Release();
+    if (CStoneTexture->SRVMap)  CStoneTexture->SRVMap->Release();
+    if (CStoneTexture->Map)     CStoneTexture->Map->Release();
+    if (CSphereTexture->SRVMap) CSphereTexture->SRVMap->Release();
+    if (CSphereTexture->Map)    CSphereTexture->Map->Release();
+    if (CBrickTexture->SRVMap)  CBrickTexture->SRVMap->Release();
+    if (CBrickTexture->Map)     CBrickTexture->Map->Release();
 
     if (gPerModelConstantBuffer)  gPerModelConstantBuffer->Release();
     if (gPerFrameConstantBuffer)  gPerFrameConstantBuffer->Release();
@@ -289,28 +290,26 @@ void ReleaseResources()
         delete gLights[i]->LightModel;  gLights[i]->LightModel = nullptr;
     }
 
-    delete gCamera;     gCamera    = nullptr;
-    delete gGround;     gGround    = nullptr;
-    delete gCrate;      gCrate     = nullptr;
-    delete gSphere;     gSphere    = nullptr;
-    delete gLerpCube;   gLerpCube  = nullptr;
-    delete gAdditiveBlendingModel; gAdditiveBlendingModel = nullptr;
+    delete gCamera;                      gCamera                      = nullptr;
+    delete gGround;                      gGround                      = nullptr;
+    delete gCrate;                       gCrate                       = nullptr;
+    delete gNormalMappingCube;           gNormalMappingCube           = nullptr;
+    delete gSphere;                      gSphere                      = nullptr;
+    delete gLerpCube;                    gLerpCube                    = nullptr;
+    delete gAdditiveBlendingModel;       gAdditiveBlendingModel       = nullptr;
     delete gMultiplicativeBlendingModel; gMultiplicativeBlendingModel = nullptr;
-    delete gAlphaBlendingModel; gAlphaBlendingModel = nullptr;
-    //delete gCharacter;  gCharacter = nullptr;
+    delete gAlphaBlendingModel;          gAlphaBlendingModel          = nullptr;
+    delete gParallaxMappingCube;         gParallaxMappingCube         = nullptr;
+    delete gTrollModel;                  gTrollModel                  = nullptr;
 
-    delete gLightMesh;      gLightMesh     = nullptr;
-    delete gGroundMesh;     gGroundMesh    = nullptr;
-    delete gCrateMesh;      gCrateMesh     = nullptr;
-    delete gSphereMesh;     gSphereMesh    = nullptr;
-    delete gLerpCubeMesh;   gLerpCubeMesh  = nullptr;
-    delete gAdditiveBlendingMesh;   gAdditiveBlendingMesh = nullptr;
-    delete gMultiplicativeBlendingModel; gMultiplicativeBlendingModel = nullptr;
-    delete gAlphaBlendingMesh; gAlphaBlendingMesh = nullptr;
-    //delete gCharacterMesh;  gCharacterMesh = nullptr;
+    delete gLightMesh;         gLightMesh         = nullptr;
+    delete gGroundMesh;        gGroundMesh        = nullptr;
+    delete gCrateMesh;         gCrateMesh         = nullptr;
+    delete gNormalMappingMesh; gNormalMappingMesh = nullptr;
+    delete gSphereMesh;        gSphereMesh        = nullptr;
+    delete gCubeMesh;          gCubeMesh          = nullptr;
+    delete gTrollMesh;         gTrollMesh         = nullptr;
 }
-
-
 
 //--------------------------------------------------------------------------------------
 // Scene Rendering
@@ -333,69 +332,95 @@ void RenderSceneFromCamera(Camera* camera)
     //// Render skinned models ////
     ///////////////////////////////
 
-    // Select which shaders to use next
-    gD3DContext->PSSetShader(gPixelLightingPixelShader, nullptr, 0);
-    
-    // States - no blending, normal depth buffer and culling
-    gD3DContext->OMSetBlendState(gNoBlendingState, nullptr, 0xffffff);
-    gD3DContext->OMSetDepthStencilState(gUseDepthBufferState, 0);
-    gD3DContext->RSSetState(gCullBackState);
-
-    // Select the approriate textures and sampler to use in the pixel shader
-    gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
-
     ///////////////////////////////////
     //// Render non-skinned models ////
     ///////////////////////////////////
-
-    // Select which shaders to use next
-    gD3DContext->VSSetShader(gPixelLightingVertexShader, nullptr, 0); // Only need to change the vertex shader from skinning
     
     // Render lit models, only change textures for each onee
-    gD3DContext->PSSetShaderResources(0, 1, &GroundTexture->SRVMap); // First parameter must match texture slot number in the shader
+    // States - no blending, normal depth buffer and culling
+    gGround->Setup(gPixelLightingVertexShader, gPixelLightingPixelShader);
+    gGround->SetStates(gNoBlendingState, gUseDepthBufferState, gCullBackState);
+    gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
+    gGround->SetShaderResources(0, CGroundTexture->SRVMap);
     gGround->Render();
 
-    gD3DContext->PSSetShaderResources(0, 1, &StoneTexture->SRVMap);
+    gCrate->SetShaderResources(0, CStoneTexture->SRVMap);
     gCrate->Render();
 
-    gD3DContext->PSSetShader(gBlendingPixelShader, nullptr, 0);
-    gD3DContext->PSSetShaderResources(0, 1, &LightTexture->SRVMap);
-    gD3DContext->OMSetBlendState(gAdditiveBlendingState, nullptr, 0xffffff);
-    gD3DContext->OMSetDepthStencilState(gDepthReadOnlyState, 0);
-    gD3DContext->RSSetState(gCullBackState);
+    //-------------------//
+    // Additive Blending //
+    //-------------------//
+
+    gAdditiveBlendingModel->Setup(gBlendingPixelShader);
+    gAdditiveBlendingModel->SetStates(gAdditiveBlendingState, gDepthReadOnlyState, gCullBackState);
+    gAdditiveBlendingModel->SetShaderResources(0, CLightTexture->SRVMap);
     gAdditiveBlendingModel->Render();
 
-    gD3DContext->PSSetShaderResources(0, 1, &GlassTexture->SRVMap);
-    gD3DContext->OMSetBlendState(gMultiplicativeBlend, nullptr, 0xffffff);
-    gD3DContext->OMSetDepthStencilState(gDepthReadOnlyState, 0);
-    gD3DContext->RSSetState(gCullNoneState);
-    gMultiplicativeBlendingModel->Render();
+    //----------------//
+    // Alpha Blending //
+    //----------------//
 
-    gD3DContext->PSSetShaderResources(0, 1, &MoogleTexture->SRVMap);
-    gD3DContext->OMSetBlendState(gAlphaBlending, nullptr, 0xffffff);
-    gD3DContext->OMSetDepthStencilState(gDepthReadOnlyState, 0);
-    gD3DContext->RSSetState(gCullBackState);
+    gAlphaBlendingModel->SetShaderResources(0, CMoogleTexture->SRVMap);
+    gAlphaBlendingModel->SetStates(gAlphaBlending, gUseDepthBufferState, gCullBackState);
     gAlphaBlendingModel->Render();
 
-    gD3DContext->VSSetShader(gWiggleVertexShader, nullptr, 0);
-    gD3DContext->PSSetShader(gTintPixelShader, nullptr, 0);
-    gD3DContext->PSSetShaderResources(0, 1, &SphereTexture->SRVMap);
-    gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
+    //-------------------//
+    // Texture Scrolling //
+    //-------------------//
 
-    gD3DContext->OMSetBlendState(gNoBlendingState, nullptr, 0xffffff);
-    gD3DContext->OMSetDepthStencilState(gUseDepthBufferState, 0);
-    gD3DContext->RSSetState(gCullBackState);
+    gSphere->Setup(gWigglingVertexShader, gTextureScrollingPixelShader);
+    gSphere->SetShaderResources(0, CSphereTexture->SRVMap);
+    gSphere->SetStates(gNoBlendingState, gUseDepthBufferState, gCullBackState);
     gSphere->Render();
 
-    //// Render Lerp Cube ////
+    //----------------//
+    // Texture Fading //
+    //----------------//
 
-    gD3DContext->VSSetShader(gPixelLightingVertexShader, nullptr, 0);
-    gD3DContext->PSSetShader(gTextureLerpPixelShader, nullptr, 0);
-    gD3DContext->PSSetShaderResources(0, 1, &BrickTexture->SRVMap);
-    gD3DContext->PSSetShaderResources(1, 1, &GroundTexture->SRVMap);
-    gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
+    gLerpCube->Setup(gPixelLightingVertexShader, gTextureFadingPixelShader);
+    gLerpCube->SetShaderResources(0,CBrickTexture->SRVMap , 1, CGroundTexture->SRVMap);
+    gLerpCube->SetStates(gNoBlendingState, gUseDepthBufferState, gCullBackState);
     gLerpCube->Render();
 
+    //----------------//
+    // Normal Mapping //
+    //----------------//
+
+    gNormalMappingCube->Setup(gNormalMappingVertexShader, gNormalMappingPixelShader);
+    gNormalMappingCube->SetShaderResources(0, CPatternTexture->SRVMap,1, CPatternNormal->SRVMap);
+    gNormalMappingCube->Render();
+
+    gParallaxMappingCube->Setup(gParallaxMappingPixelShader);
+    gParallaxMappingCube->SetShaderResources(0, CWallTexture->SRVMap, 1, CWallNormalHeight->SRVMap);
+    gParallaxMappingCube->Render();
+
+    //-----------------------------------//
+    // Cell Shading - First Pass Through //
+    //-----------------------------------//
+
+    gTrollModel->Setup(gCellShadingOutlineVertexShader, gCellShadingOutlinePixelShader);
+    gTrollModel->SetStates(gNoBlendingState, gUseDepthBufferState, gCullFrontState);
+    gTrollModel->Render();
+
+    //------------------------------------//
+    // Cell Shading - Second Pass Through //
+    //------------------------------------//
+
+    gTrollModel->Setup(gPixelLightingVertexShader, gCellShadingPixelShader);
+    gTrollModel->SetStates(gNoBlendingState, gUseDepthBufferState, gCullBackState);
+    gTrollModel->SetShaderResources(0, CTrollTexture->SRVMap, 1, CCellMapTexture->SRVMap);
+    gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
+    gD3DContext->PSSetSamplers(1, 1, &gPointSampler);
+    gTrollModel->Render();
+
+    //-------------------------//
+    // Multiplicative Blending //
+    //-------------------------//
+
+    gMultiplicativeBlendingModel->Setup(gPixelLightingVertexShader, gBlendingPixelShader);
+    gMultiplicativeBlendingModel->SetStates(gMultiplicativeBlend, gDepthReadOnlyState, gCullNoneState);
+    gMultiplicativeBlendingModel->SetShaderResources(0, CGlassTexture->SRVMap);
+    gMultiplicativeBlendingModel->Render();
 
     //// Render lights ////
 
@@ -404,7 +429,7 @@ void RenderSceneFromCamera(Camera* camera)
     gD3DContext->PSSetShader(gLightModelPixelShader,      nullptr, 0);
 
     // Select the texture and sampler to use in the pixel shader
-    gD3DContext->PSSetShaderResources(0, 1, &LightTexture->SRVMap); // First parameter must match texture slot number in the shaer
+    gD3DContext->PSSetShaderResources(0, 1, &CLightTexture->SRVMap); // First parameter must match texture slot number in the shaer
     gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
 
     // States - additive blending, read-only depth buffer and no culling (standard set-up for blending
@@ -419,9 +444,6 @@ void RenderSceneFromCamera(Camera* camera)
         gLights[i]->RenderLight();
     }
 }
-
-
-
 
 // Rendering the scene
 void RenderScene()
@@ -441,7 +463,9 @@ void RenderScene()
     gPerFrameConstants.specularPower  = gSpecularPower;
     gPerFrameConstants.cameraPosition = gCamera->Position();
 
-
+    gPerFrameConstants.parallaxDepth = gParallaxDepth;
+    gPerFrameConstants.outlineColour = OutlineColour;
+    gPerFrameConstants.outlineThickness = OutlineThickness;
 
     //// Main scene rendering ////
 
@@ -463,6 +487,7 @@ void RenderScene()
     vp.TopLeftY = 0;
     gD3DContext->RSSetViewports(1, &vp);
 
+
     // Render the scene from the main camera
     RenderSceneFromCamera(gCamera);
 
@@ -482,7 +507,6 @@ void RenderScene()
 void UpdateScene(float frameTime)
 {
     // Control character part. First parameter is node number - index from flattened depth-first array of model parts. 0 is root
-    //gCharacter->Control(36, frameTime, Key_I, Key_K, Key_J, Key_L, Key_U, Key_O, Key_Period, Key_Comma );
 
     // Orbit the light - a bit of a cheat with the static variable [ask the tutor if you want to know what this is]
     static float rotate = 0.0f;
@@ -491,8 +515,8 @@ void UpdateScene(float frameTime)
     if (go)  rotate -= gLightOrbitSpeed * frameTime;
     if (KeyHit(Key_1))  go = !go;
 
-    float wig = sin(((2 * rotate + 3) * 3.14 / 2) + 1);
-    float wig2 = cos(((2 * rotate + 3) * 3.14 / 2) + 1);
+    float wig = sin(((2 * cos(rotate) + 3) * 3.14 / 2) + 1);
+    float wig2 = cos(((2 * cos(rotate) + 3) * 3.14 / 2) + 1);
 
     gLights[0]->LightColour = CVector3 {0.3, wig2 / 3, wig / 3};
               

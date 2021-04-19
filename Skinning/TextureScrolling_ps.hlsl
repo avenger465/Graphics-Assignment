@@ -3,7 +3,7 @@
 Texture2D DiffuseSpecularMap : register(t0);
 SamplerState TexSampler : register(s0);
 
-float4 main(TexturePixelShaderInput input) : SV_TARGET
+float4 main(LightingPixelShaderInput input) : SV_TARGET
 {
     float2 newUV = input.uv;
 
@@ -14,7 +14,7 @@ float4 main(TexturePixelShaderInput input) : SV_TARGET
 	
 	float4 finalColour;
 	finalColour.rgb = textureColour.rgb;
-	finalColour.z = 0.7;
+	finalColour.y = 0.5;
 	finalColour.w = textureColour.w;
 	
 	return finalColour;

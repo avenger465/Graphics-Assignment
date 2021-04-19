@@ -17,13 +17,19 @@
 // Vertex and pixel shader DirectX objects
 extern ID3D11VertexShader* gPixelLightingVertexShader;
 extern ID3D11PixelShader* gBlendingPixelShader;
-extern ID3D11PixelShader* gTextureLerpPixelShader;
-extern ID3D11VertexShader* gWiggleVertexShader;
-extern ID3D11PixelShader* gTintPixelShader;
+extern ID3D11PixelShader* gTextureFadingPixelShader;
+extern ID3D11VertexShader* gWigglingVertexShader;
+extern ID3D11PixelShader* gTextureScrollingPixelShader;
 extern ID3D11PixelShader*  gPixelLightingPixelShader;
 extern ID3D11VertexShader* gBasicTransformVertexShader;
 extern ID3D11VertexShader* gSkinningVertexShader; // Skinning is performed in the vertex shader (matrix work), we can use any pixel shader for lighting etc.
 extern ID3D11PixelShader*  gLightModelPixelShader;
+extern ID3D11PixelShader* gNormalMappingPixelShader;
+extern ID3D11VertexShader* gNormalMappingVertexShader;
+extern ID3D11PixelShader* gParallaxMappingPixelShader;
+extern ID3D11PixelShader* gCellShadingOutlinePixelShader;
+extern ID3D11VertexShader* gCellShadingOutlineVertexShader;
+extern ID3D11PixelShader* gCellShadingPixelShader;
 
 
 //--------------------------------------------------------------------------------------

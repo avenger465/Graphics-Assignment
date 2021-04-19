@@ -45,15 +45,10 @@ float4 main(LightingPixelShaderInput input) : SV_TARGET
 	// Combine textures
 
     // Sample diffuse material and specular material colour for this pixel from a texture using a given sampler that you set up in the C++ code
-	float4 BrickColour				  = BrickDiffuseSpecularMap.Sample(TexSampler, input.uv);
-	float3 BrickDiffuseMaterialColour = BrickColour.rgb; // Diffuse material colour in texture RGB (base colour of model)
-	float BrickSpecularMaterialColour = BrickColour.a; // Specular material colour in texture A (shininess of the surface)
+	float4 BrickColour = BrickDiffuseSpecularMap.Sample(TexSampler, input.uv);	
+	float4 WoodColour  = WoodDiffuseSpecularMap.Sample(TexSampler, input.uv);
 	
-	float4 WoodColour = WoodDiffuseSpecularMap.Sample(TexSampler, input.uv);
-	float3 WoodDiffuseMaterialColour  = WoodColour.rgb; // Diffuse material colour in texture RGB (base colour of model)
-	float  WoodSpecularMaterialColour = WoodColour.a;
-	
-	float4 Lerpresult = lerp(BrickColour, WoodColour, (cos(Wiggle)));
+	float4 Lerpresult  = lerp(BrickColour, WoodColour, (sin(Wiggle)));
 	
 	float3 DiffuseMaterialColour = Lerpresult.rgb;
 	float SpecularMaterialColour = Lerpresult.a;

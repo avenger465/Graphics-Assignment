@@ -3,7 +3,6 @@
 //--------------------------------------------------------------------------------------
 // Using include files to define the type of data passed between the shaders
 
-
 //--------------------------------------------------------------------------------------
 // Shader input / output
 //--------------------------------------------------------------------------------------
@@ -14,15 +13,16 @@ struct BasicVertex
     float3 position : position;
     float3 normal   : normal;
     float2 uv       : uv;
+    float3 tangent : tangent;
 };
 
-struct TextureVertex
+struct TangentVertex
 {
-	float3 position : position;
-	float3 normal : normal;
-	float2 uv : uv;
+    float3 position : position;
+    float3 normal : normal;
+    float3 tangent  : tangent;
+    float2 uv : uv;
 };
-
 
 //*******************
 
@@ -56,25 +56,23 @@ struct LightingPixelShaderInput
                                             // automatically by the GPU (rasterizer stage) so each pixel will know
                                             // its position and normal in the world - required for lighting equations
     
+    float2 uv : uv; // UVs are texture coordinates. The artist specifies for every vertex which point on the texture is "pinned" to that vertex.
+    
+    float3 modelTangent : modelTangent; // --"--
+};
+
+struct NormalMappingPixelShaderInput
+{
+    float4 projectedPosition : SV_Position; 
+                                            
+                                            
+    
+    float3 worldPosition : worldPosition; 
+    float3 modelNormal : modelNormal; 
+    float3 modelTangent : modelTangent; 
     
     float2 uv : uv; // UVs are texture coordinates. The artist specifies for every vertex which point on the texture is "pinned" to that vertex.
 };
-
-struct TexturePixelShaderInput
-{
-	float4 projectedPosition : SV_Position; // This is the position of the pixel to render, this is a required input
-                                            // to the pixel shader and so it uses the special semantic "SV_Position"
-                                            // because the shader needs to identify this important information
-    
-	float3 worldPosition : worldPosition; // The world position and normal of each vertex is passed to the pixel...
-	float3 worldNormal : worldNormal; //...shader to calculate per-pixel lighting. These will be interpolated
-                                            // automatically by the GPU (rasterizer stage) so each pixel will know
-                                            // its position and normal in the world - required for lighting equations   
-	float2 Dimensions : dimensions;
-    
-	float2 uv : uv; // UVs are texture coordinates. The artist specifies for every vertex which point on the texture is "pinned" to that vertex.
-};
-
 
 // This structure is similar to the one above but for the light models, which aren't themselves lit
 struct SimplePixelShaderInput
@@ -115,15 +113,16 @@ cbuffer PerFrameConstants : register(b0) // The b0 gives this constant buffer th
     float3   gLight3Colour;
     float    padding8;
     float3   Intensity;
-    float    padding9;
+    float    Wiggle;
 
     float3   gAmbientColour;
     float    gSpecularPower;
 
     float3   gCameraPosition;
-    float    padding5;
+    float    gParallaxDepth;
     
-	float    Wiggle;
+    float3   gOutlineColour;
+    float    gOutlineThickness;
 }
 // Note constant buffers are not structs: we don't use the name of the constant buffer, these are really just a collection of global variables (hence the 'g')
 

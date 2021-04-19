@@ -220,7 +220,7 @@ bool CreateStates()
     // Then create a DirectX object for your description that can be used by a shader
     if (FAILED(gD3DDevice->CreateBlendState(&blendDesc, &gMultiplicativeBlend)))
     {
-        gLastError = "Error creating no-blend state";
+        gLastError = "Error creating Multiplicative state";
         return false;
     }
 
@@ -240,7 +240,7 @@ bool CreateStates()
     // Then create a DirectX object for your description that can be used by a shader
     if (FAILED(gD3DDevice->CreateBlendState(&blendDesc, &gAlphaBlending)))
     {
-        gLastError = "Error creating no-blend state";
+        gLastError = "Error creating alpha state";
         return false;
     }
     	

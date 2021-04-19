@@ -4,9 +4,9 @@
 
 
 
-TexturePixelShaderInput main(TextureVertex modelVertex)
+LightingPixelShaderInput main(BasicVertex modelVertex)
 {
-    TexturePixelShaderInput output;
+    LightingPixelShaderInput output;
 	
 	float4 modelPosition = float4(modelVertex.position, 1);
 
@@ -30,9 +30,6 @@ TexturePixelShaderInput main(TextureVertex modelVertex)
 
     // Pass texture coordinates (UVs) on to the pixel shader, the vertex shader doesn't need them
 	output.uv = modelVertex.uv;
-	
-	output.Dimensions.x = 0.6; //Wiggle / 2;
-	output.Dimensions.y = 0.6;
 	
     float4 viewPosition = mul(gViewMatrix, worldPosition);
     output.projectedPosition = mul(gProjectionMatrix, viewPosition);

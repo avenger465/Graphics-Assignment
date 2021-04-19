@@ -10,13 +10,28 @@
       <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Blending_ps.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\LightHelper_ps.cso</FullPath>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShadingOutline_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShadingOutline_vs.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShading_ps.cso</FullPath>
     </ContentFile>
     <ContentFile>
       <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\LightModel_ps.cso</FullPath>
     </ContentFile>
     <ContentFile>
       <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\BasicTransform_vs.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\NormalMapping_ps.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\NormalMapping_vs.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\ParallaxMapping_ps.cso</FullPath>
     </ContentFile>
     <ContentFile>
       <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\PixelLighting_ps.cso</FullPath>
@@ -28,13 +43,13 @@
       <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Skinning_vs.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureLerp_ps.cso</FullPath>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureFading_ps.cso</FullPath>
     </ContentFile>
     <ContentFile>
       <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureScrolling_ps.cso</FullPath>
     </ContentFile>
     <ContentFile>
-      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Wiggle_vs.cso</FullPath>
+      <FullPath>C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\VertexWiggling_vs.cso</FullPath>
     </ContentFile>
   </ContentFiles>
   <SatelliteDlls />

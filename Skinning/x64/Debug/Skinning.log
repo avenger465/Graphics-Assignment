@@ -1,5 +1,5 @@
 ﻿  Scene.cpp
-C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(494,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(495,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(497,63): warning C4305: 'argument': truncation from 'double' to 'const float'
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(518,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(519,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(521,63): warning C4305: 'argument': truncation from 'double' to 'const float'
   Skinning.vcxproj -> C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Skinning.exe

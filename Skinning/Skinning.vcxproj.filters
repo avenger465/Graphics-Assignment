@@ -99,19 +99,34 @@
     <FxCompile Include="Skinning_vs.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Wiggle_vs.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="TextureScrolling_ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="TextureLerp_ps.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Blending_ps.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="LightHelper_ps.hlsl">
+    <FxCompile Include="NormalMapping_vs.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="NormalMapping_ps.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ParallaxMapping_ps.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="VertexWiggling_vs.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TextureFading_ps.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="CellShading_ps.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="CellShadingOutline_vs.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="CellShadingOutline_ps.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

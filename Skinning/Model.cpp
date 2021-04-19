@@ -73,3 +73,40 @@ void Model::Control(int node, float frameTime, KeyCode turnUp, KeyCode turnDown,
 		matrix.SetRow(3, matrix.GetRow(3) - localZDir * MOVEMENT_SPEED * frameTime);
 	}
 }
+
+void Model::SetStates(ID3D11BlendState* BlendState, ID3D11DepthStencilState* DepthStencilState, ID3D11RasterizerState* Rasterizerstate)
+{
+	gD3DContext->OMSetBlendState(BlendState, nullptr, 0xffffff);
+	gD3DContext->OMSetDepthStencilState(DepthStencilState, 0);
+	gD3DContext->RSSetState(Rasterizerstate);
+}
+
+void Model::SetShaderResources(UINT TextureSlot, ID3D11ShaderResourceView* Texture)
+{
+	gD3DContext->PSSetShaderResources(TextureSlot, 1, &Texture);
+}
+
+//Setup the Vertex Shader
+void Model::Setup(ID3D11VertexShader* VertexShader)
+{
+	gD3DContext->VSSetShader(VertexShader, nullptr, 0);
+}
+
+//Setup the Pixel Shader
+void Model::Setup(ID3D11PixelShader* PixelShader)
+{
+	gD3DContext->PSSetShader(PixelShader, nullptr, 0);
+}
+
+//Setup the vertex and pixel shader
+void Model::Setup(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader)
+{
+	gD3DContext->VSSetShader(VertexShader, nullptr, 0);
+	gD3DContext->PSSetShader(PixelShader, nullptr, 0);
+}
+
+void Model::SetShaderResources(UINT TextureSlot, ID3D11ShaderResourceView* Texture, UINT NormalMapSlot, ID3D11ShaderResourceView* NormalMap)
+{
+	gD3DContext->PSSetShaderResources(TextureSlot, 1, &Texture);
+	gD3DContext->PSSetShaderResources(NormalMapSlot, 1, &NormalMap);
+}
