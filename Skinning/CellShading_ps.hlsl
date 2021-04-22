@@ -16,7 +16,7 @@ float4 main(LightingPixelShaderInput input) : SV_TARGET
     float3 cameraDirection = normalize(gCameraPosition - input.worldPosition);
 
     // Light 1
-    float3 light1Vector = gLight1Position - input.worldPosition;
+    float3 light1Vector = Light1.Position - input.worldPosition;
     float light1Distance = length(light1Vector);
     float3 light1Direction = light1Vector / light1Distance; // Quicker than normalising as we have length for attenuation
 	
@@ -28,23 +28,24 @@ float4 main(LightingPixelShaderInput input) : SV_TARGET
 	//*************************************************************************************************//
     float diffuseLevel1 = max(dot(input.worldNormal, light1Direction), 0);
     float cellDiffuseLevel1 = CellMap.Sample(PointSampleClamp, diffuseLevel1).r;
-    float3 diffuseLight1 = gLight1Colour * cellDiffuseLevel1 / light1Distance;
+    float3 diffuseLight1 = Light1.Colour * cellDiffuseLevel1 / light1Distance;
 
     float3 halfway = normalize(light1Direction + cameraDirection);
     float3 specularLight1 = diffuseLight1 * pow(max(dot(input.worldNormal, halfway), 0), gSpecularPower); // Multiplying by diffuseLight instead of light colour - my own personal preference
 
     // Light 2
-    float3 light2Vector = gLight2Position - input.worldPosition;
+    float3 light2Vector = Light2.Position - input.worldPosition;
     float light2Distance = length(light2Vector);
     float3 light2Direction = light2Vector / light2Distance;
 
     float diffuseLevel2 = max(dot(input.worldNormal, light2Direction), 0);
     float cellDiffuseLevel2 = CellMap.Sample(PointSampleClamp, diffuseLevel2).b;
-    float3 diffuseLight2 = gLight2Colour * cellDiffuseLevel2 / light2Distance;
+    float3 diffuseLight2 = Light2.Colour * cellDiffuseLevel2 / light2Distance;
 
     halfway = normalize(light2Direction + cameraDirection);
     float3 specularLight2 = diffuseLight2 * pow(max(dot(input.worldNormal, halfway), 0), gSpecularPower);
 
+   
     // Sample diffuse material colour for this pixel from a texture using a given sampler that you set up in the C++ code
     // Ignoring any alpha in the texture, just reading RGB
     float4 textureColour = DiffuseMap.Sample(TexSampler, input.uv);

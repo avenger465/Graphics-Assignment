@@ -82,14 +82,24 @@ struct SimplePixelShaderInput
 };
 
 
+struct Light
+{
+    float3 Position : Position;
+    float padding1;    
+    float3 Colour : Colour;
+    float Padding2;
+    float3 Direction : Direction;
+    float CosHalfAngle : CosHalfAngle;
+    
+    float3 diffuse : diffuse;
+    float Padding3;
+};
 //--------------------------------------------------------------------------------------
 // Constant Buffers
 //--------------------------------------------------------------------------------------
-
 // These structures are "constant buffers" - a way of passing variables over from C++ to the GPU
 // They are called constants but that only means they are constant for the duration of a single GPU draw call.
 // These "constants" correspond to variables in C++ that we will change per-model, or per-frame etc.
-
 // In this exercise the matrices used to position the camera are updated from C++ to GPU every frame along with lighting information
 // These variables must match exactly the gPerFrameConstants structure in Scene.cpp
 cbuffer PerFrameConstants : register(b0) // The b0 gives this constant buffer the number 0 - used in the C++ code
@@ -98,20 +108,12 @@ cbuffer PerFrameConstants : register(b0) // The b0 gives this constant buffer th
     float4x4 gProjectionMatrix;
     float4x4 gViewProjectionMatrix; // The above two matrices multiplied together to combine their effects
 
-    float3   gLight1Position; // 3 floats: x, y z
-    float    padding1;        // Pad above variable to float4 (HLSL requirement - copied in the the C++ version of this structure)
-    float3   gLight1Colour;
-    float    padding2;
-
-    float3   gLight2Position;
-    float    padding3;
-    float3   gLight2Colour;
-    float    padding4;
+    Light Light1;
     
-    float3   gLight3Position;
-    float    padding7;
-    float3   gLight3Colour;
-    float    padding8;
+    Light Light2;
+    
+    Light Light3;
+    
     float3   Intensity;
     float    Wiggle;
 

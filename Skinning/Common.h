@@ -45,7 +45,20 @@ extern const float MOVEMENT_SPEED;
 // when a serious error occurs
 extern std::string gLastError;
 
+struct Light
+{
+    CVector3 Position;
+    float padding1;
 
+    CVector3 Colour;
+    float Padding2;
+
+    CVector3 Direction;
+    float CosHalfAngle;
+
+    CVector3 diffuse;
+    float Padding3;
+};
 
 //--------------------------------------------------------------------------------------
 // Constant Buffers
@@ -62,20 +75,10 @@ struct PerFrameConstants
     CMatrix4x4 projectionMatrix;
     CMatrix4x4 viewProjectionMatrix; // The above two matrices multiplied together to combine their effects
 
-    CVector3   light1Position; // 3 floats: x, y z
-    float      padding1;       // Pad above variable to float4 (HLSL requirement - which we must duplicate in this the C++ version of the structure)
-    CVector3   light1Colour;
-    float      padding2;
+    Light light1;
+    Light light2;
+    Light light3;
 
-    CVector3   light2Position;
-    float      padding3;
-    CVector3   light2Colour;
-    float      padding4;
-
-    CVector3   light3Position;
-    float      padding7;
-    CVector3   light3Colour;
-    float      padding8;
     CVector3 Intensity;
     float Wiggle;
 

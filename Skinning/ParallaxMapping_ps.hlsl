@@ -111,24 +111,35 @@ float4 main(NormalMappingPixelShaderInput input) : SV_Target
     // Lighting equations
 
     // Light 1
-    float3 light1Vector = gLight1Position - input.worldPosition;
+    float3 light1Vector = Light1.Position - input.worldPosition;
     float light1Distance = length(light1Vector);
     float3 light1Direction = light1Vector / light1Distance; // Quicker than normalising as we have length for attenuation
-    float3 diffuseLight1 = gLight1Colour * max(dot(worldNormal, light1Direction), 0) / light1Distance;
+    float3 diffuseLight1 = Light1.Colour * max(dot(worldNormal, light1Direction), 0) / light1Distance;
 
     float3 halfway = normalize(light1Direction + cameraDirection);
     float3 specularLight1 = diffuseLight1 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
 
 
     // Light 2
-    float3 light2Vector = gLight2Position - input.worldPosition;
+    float3 light2Vector = Light2.Position - input.worldPosition;
     float light2Distance = length(light2Vector);
     float3 light2Direction = light2Vector / light2Distance;
-    float3 diffuseLight2 = gLight2Colour * max(dot(worldNormal, light2Direction), 0) / light2Distance;
+    float3 diffuseLight2 = Light2.Colour * max(dot(worldNormal, light2Direction), 0) / light2Distance;
 
     halfway = normalize(light2Direction + cameraDirection);
     float3 specularLight2 = diffuseLight2 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
 
+    float3 light3Direction = normalize(Light3.Position - input.worldPosition);
+    float3 diffuseLight3 = 0;
+    float3 specularLight3 = 0;
+	
+    if (dot(Light3.Direction, -light3Direction) > Light3.CosHalfAngle)
+    {
+        float3 light3Dist = length(Light3.Position - input.worldPosition);
+        diffuseLight3 = Light3.Colour * max(dot(worldNormal, light3Direction), 0) / light3Dist;
+        halfway = normalize(light3Direction + cameraDirection);
+        specularLight3 = diffuseLight3 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+    }
 
     // Sample diffuse material colour for this pixel from a texture using a given sampler that you set up in the C++ code
     // Ignoring any alpha in the texture, just reading RGB
@@ -136,8 +147,8 @@ float4 main(NormalMappingPixelShaderInput input) : SV_Target
     float3 diffuseMaterialColour = textureColour.rgb;
     float specularMaterialColour = textureColour.a;
 
-    float3 finalColour = (gAmbientColour + diffuseLight1 + diffuseLight2) * diffuseMaterialColour +
-                         (specularLight1 + specularLight2) * specularMaterialColour;
+    float3 finalColour = (gAmbientColour + diffuseLight1 + diffuseLight2 + diffuseLight3) * diffuseMaterialColour +
+                         (specularLight1 + specularLight2 + specularLight3) * specularMaterialColour;
 
     return float4(finalColour, 1.0f); // Always use 1.0f for alpha - no alpha blending in this lab
 }

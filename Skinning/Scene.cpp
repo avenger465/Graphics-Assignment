@@ -60,15 +60,17 @@ Model* gTrollModel;
 Camera* gCamera;
 
 // Store lights in an array in this exercise
-const int NUM_LIGHTS = 2;
+const int NUM_LIGHTS = 3;
 CLight* gLights[NUM_LIGHTS]; 
-float LightsScale[NUM_LIGHTS] = { 10.0f, 10.0f};
+float LightsScale[NUM_LIGHTS] = { 10.0f, 10.0f, 10.0f};
 
 CVector3 LightsColour[NUM_LIGHTS] = { {1.0f, 0.8f, 1.0f},
-                                      {1.0f, 0.8f, 1.0f} };
+                                      {1.0f, 0.8f, 1.0f},
+                                      {1.0f, 1.0f, 1.0f} };
 
 CVector3 LightsPosition[NUM_LIGHTS] = { { 30, 10, 0 },
-                                        { 10, 20, 50 }};
+                                        { -30, 20, 80 },
+                                        { 60, 20,0} };
 
 // Additional light information
 CVector3 gAmbientColour = { 0.2f, 0.2f, 0.3f }; // Background level of light (slightly bluish to match the far background, which is dark blue)
@@ -83,6 +85,7 @@ float OutlineThickness = 0.03f;
 const float gLightOrbit = 20.0f;
 const float gLightOrbitSpeed = 0.7f;
 const float gParallaxDepth = 0.1f;
+float gSpotlightConeAngle = 90.0f;
 
 //--------------------------------------------------------------------------------------
 // Constant Buffers
@@ -208,7 +211,7 @@ bool InitScene()
     gTrollModel                   = new Model(gTrollMesh);
 
 	// Initial positions
-	gCrate-> SetPosition({ 18, 5, 18 });
+	gCrate-> SetPosition({ 60, 5, 25 });
 	gCrate-> SetScale( 1.0f );
 	gCrate-> SetRotation({ 0.0f, 0/*ToRadians(-50.0f) */, 0.0f });
 
@@ -250,6 +253,8 @@ bool InitScene()
         gLights[i] = new CLight(gLightMesh, LightsScale[i], LightsColour[i], LightsPosition[i], pow(LightsScale[i], 0.7f));
     }
 
+
+    gLights[2]->LightModel->SetRotation({ToRadians(40.0f), 0.0f, 0.0f});
     //// Set up camera ////
 
     gCamera = new Camera();
@@ -451,13 +456,18 @@ void RenderScene()
     //// Common settings ////
 
     // Set up the light information in the constant buffer
-    // Don't send to the GPU yet, the function RenderSceneFromCamera will do that
-    gPerFrameConstants.light1Colour   = gLights[0]->LightColour * gLights[0]->LightStrength;
-    gPerFrameConstants.light1Position = gLights[0]->LightModel->Position();
-                                                  
-                                                  
-    gPerFrameConstants.light2Colour   = gLights[1]->LightColour * gLights[1]->LightStrength;
-    gPerFrameConstants.light2Position = gLights[1]->LightModel->Position();
+
+    gPerFrameConstants.light1.Colour = gLights[0]->LightColour * gLights[0]->LightStrength;
+    gPerFrameConstants.light1.Position = gLights[0]->LightModel->Position();
+
+
+    gPerFrameConstants.light2.Colour = gLights[1]->LightColour * gLights[1]->LightStrength;
+    gPerFrameConstants.light2.Position = gLights[1]->LightModel->Position();
+
+    gPerFrameConstants.light3.Colour = gLights[2]->LightColour * gLights[2]->LightStrength;
+    gPerFrameConstants.light3.Position = gLights[2]->LightModel->Position();
+    gPerFrameConstants.light3.Direction = Normalise(gLights[2]->LightModel->WorldMatrix().GetZAxis());
+    gPerFrameConstants.light3.CosHalfAngle = cos(ToRadians(gSpotlightConeAngle / 4));
 
     gPerFrameConstants.ambientColour  = gAmbientColour;
     gPerFrameConstants.specularPower  = gSpecularPower;
@@ -526,7 +536,7 @@ void UpdateScene(float frameTime)
 
 	// Control camera (will update its view matrix)
 	gCamera->Control(frameTime, Key_Up, Key_Down, Key_Left, Key_Right, Key_W, Key_S, Key_A, Key_D );
-    gAdditiveBlendingModel->Control(NULL, frameTime, Key_I, Key_K, Key_J, Key_L, Key_U, Key_O, Key_Period, Key_Comma);
+    gCrate->Control(NULL, frameTime, Key_I, Key_K, Key_J, Key_L, Key_U, Key_O, Key_Period, Key_Comma);
 
     // Show frame time / FPS in the window title //
     const float fpsUpdateTime = 0.5f; // How long between updates (in seconds)
