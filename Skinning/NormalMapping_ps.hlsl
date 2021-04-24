@@ -1,9 +1,12 @@
 #include "Common.hlsli"
 
 Texture2D DiffuseSpecularMap : register(t0);
-
-Texture2D NormalMap : register(t1);
 SamplerState TexSampler : register(s0);
+
+Texture2D ShadowMapLight1 : register(t1);
+SamplerState PointClamp : register(s1);
+Texture2D NormalMap : register(t2);
+
 
 float4 main(NormalMappingPixelShaderInput input) : SV_Target
 {
@@ -27,8 +30,6 @@ float4 main(NormalMappingPixelShaderInput input) : SV_Target
 	// values are stored in the range 0->1, whereas the x, y & z components should be in the range -1->1. So some scaling is needed
     
     float3 textureNormal = (2.0f * NormalMap.Sample(TexSampler, input.uv).rgb - 1.0f) * 1000; // Scale from 0->1 to -1->1
-
-    //textureNormal /= 1000;
 
 	// Now convert the texture normal into model space using the inverse tangent matrix, and then convert into world space using the world
 	// matrix. Normalise, because of the effects of texture filtering and in case the world matrix contains scaling
@@ -67,12 +68,34 @@ float4 main(NormalMappingPixelShaderInput input) : SV_Target
     
     if (dot(Light3.Direction, -light3Direction) > Light3.CosHalfAngle)
     {
-        float3 light3Dist = length(Light3.Position - input.worldPosition);
-        diffuseLight3 = Light3.Colour * max(dot(worldNormal, light3Direction), 0) / light3Dist;
-        halfway = normalize(light3Direction + cameraDirection);
-        specularLight3 = diffuseLight3 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+        if (dot(Light3.Direction, -light3Direction) > Light3.CosHalfAngle)
+        {
+            float4 light3ViewPosition = mul(Light3.lightViewMatrix, float4(input.worldPosition, 1.0f));
+            float4 light3Projection = mul(Light3.lightProjectionMatrix, light3ViewPosition);
+        
+            float2 ShadowMapUV = 0.5f * light3Projection.xy / light3Projection.w + float2(0.5f, 0.5f);
+            ShadowMapUV.y = 1.0f - ShadowMapUV.y;
+        
+            float depthFromLight3 = light3Projection.z / light3Projection.w - DepthAdjust;
+            if (depthFromLight3 < ShadowMapLight1.Sample(PointClamp, ShadowMapUV).r)
+            {
+                float3 light3Dist = length(Light3.Position - input.worldPosition);
+                diffuseLight3 = Light3.Colour * max(dot(worldNormal, light3Direction), 0) / light3Dist;
+                halfway = normalize(light3Direction + cameraDirection);
+                specularLight3 = diffuseLight3 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+            }
+        }
     }
 
+    
+    float3 light4Vec = -(normalize(Light4.Direction));
+    float3 diffuseLight4 = Light4.Colour * max(dot(light4Vec, worldNormal), 0.0f);
+    halfway = normalize(light4Vec + cameraDirection);
+    float3 specularLight4 = diffuseLight4 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+
+	// Sum the effect of the lights - add the ambient at this stage rather than for each light (or we will get too much ambient)
+    float3 diffuseLight = gAmbientColour + diffuseLight1 + diffuseLight2 + diffuseLight3 + diffuseLight4;
+    float3 specularLight = specularLight1 + specularLight2 + specularLight3 + specularLight4;
 
     // Sample diffuse material colour for this pixel from a texture using a given sampler that you set up in the C++ code
     // Ignoring any alpha in the texture, just reading RGB
@@ -80,8 +103,7 @@ float4 main(NormalMappingPixelShaderInput input) : SV_Target
     float3 diffuseMaterialColour = textureColour.rgb;
     float specularMaterialColour = textureColour.a;
 
-    float3 finalColour = (gAmbientColour + diffuseLight1 + diffuseLight2 + diffuseLight3) * diffuseMaterialColour +
-                         (specularLight1 + specularLight2 + specularLight3) * specularMaterialColour;
+    float3 finalColour = diffuseLight * diffuseMaterialColour + specularLight * specularMaterialColour;
 
     return float4(finalColour, 1.0f); // Always use 1.0f for alpha - no alpha blending in this lab
 }

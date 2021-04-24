@@ -21,8 +21,9 @@ LightingPixelShaderInput main(BasicVertex modelVertex)
 	float3 worldNormal = mul(gWorldMatrix, modelNormal).xyz; // Only needed the 4th element to do this multiplication by 4x4 matrix...
                
 	worldNormal = normalize(worldNormal);
-	//... it is not needed for lighting so discard afterwards with the .xyz
-	worldPosition.x += sin(modelPosition.z + Wiggle) * 0.6f;
+	
+	//change the values of the worldPositions coordinates 
+	worldPosition.x += sin(modelPosition.y + Wiggle) * 0.6f;
     worldPosition.y += sin(modelPosition.x + Wiggle) * 0.6f;
 	
 	output.worldNormal = worldNormal;

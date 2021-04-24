@@ -79,10 +79,9 @@ public:
 
     void SetShaderResources(UINT TextureSlot, ID3D11ShaderResourceView* Texture);
 
+    //Function overloading for the different scenarios of setting the shaders
     void Setup(ID3D11VertexShader* VertexShader);
-
     void Setup(ID3D11PixelShader* PixelShader);
-
     void Setup(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShader);
   
 

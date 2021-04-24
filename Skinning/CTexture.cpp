@@ -1,9 +1,7 @@
 #include "CTexture.h"
 #include "GraphicsHelpers.h"
 #include "../Shader.h"
-//#include <cmath>
 #include <cctype>
-//#include <atlbase.h>
 
 CTexture::CTexture()
 {

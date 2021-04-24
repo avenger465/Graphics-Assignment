@@ -13,8 +13,13 @@
 // Here we allow the shader access to a texture that has been loaded from the C++ side and stored in GPU memory (the words map and texture are used interchangeably)
 //****| INFO | Normal map, now contains per pixel heights in the alpha channel ****//
 Texture2D DiffuseSpecularMap : register(t0); // Diffuse map (main colour) in rgb and specular map (shininess level) in alpha - C++ must load this into slot 0
-Texture2D NormalHeightMap : register(t1); // Normal map in rgb and height maps in alpha - C++ must load this into slot 1
 SamplerState TexSampler : register(s0); // A sampler is a filter for a texture like bilinear, trilinear or anisotropic
+
+Texture2D ShadowMapLight1 : register(t1);
+SamplerState PointClamp : register(s1);
+
+Texture2D NormalHeightMap : register(t2); // Normal map in rgb and height maps in alpha - C++ must load this into slot 2
+
 
 
 //--------------------------------------------------------------------------------------
@@ -129,26 +134,46 @@ float4 main(NormalMappingPixelShaderInput input) : SV_Target
     halfway = normalize(light2Direction + cameraDirection);
     float3 specularLight2 = diffuseLight2 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
 
+    //Light 3
     float3 light3Direction = normalize(Light3.Position - input.worldPosition);
     float3 diffuseLight3 = 0;
     float3 specularLight3 = 0;
 	
     if (dot(Light3.Direction, -light3Direction) > Light3.CosHalfAngle)
     {
-        float3 light3Dist = length(Light3.Position - input.worldPosition);
-        diffuseLight3 = Light3.Colour * max(dot(worldNormal, light3Direction), 0) / light3Dist;
-        halfway = normalize(light3Direction + cameraDirection);
-        specularLight3 = diffuseLight3 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+        float4 light3ViewPosition = mul(Light3.lightViewMatrix, float4(input.worldPosition, 1.0f));
+        float4 light3Projection = mul(Light3.lightProjectionMatrix, light3ViewPosition);
+        
+        float2 ShadowMapUV = 0.5f * light3Projection.xy / light3Projection.w + float2(0.5f, 0.5f);
+        ShadowMapUV.y = 1.0f - ShadowMapUV.y;
+        
+        float depthFromLight3 = light3Projection.z / light3Projection.w - DepthAdjust;
+        if (depthFromLight3 < ShadowMapLight1.Sample(PointClamp, ShadowMapUV).r)
+        {
+            float3 light3Dist = length(Light3.Position - input.worldPosition);
+            diffuseLight3 = Light3.Colour * max(dot(worldNormal, light3Direction), 0) / light3Dist;
+            halfway = normalize(light3Direction + cameraDirection);
+            specularLight3 = diffuseLight3 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+        }
     }
 
+    //light 4
+    float3 light4Vec = -(normalize(Light4.Direction));
+    float3 diffuseLight4 = Light4.Colour * max(dot(light4Vec, worldNormal), 0.0f);
+    halfway = normalize(light4Vec + cameraDirection);
+    float3 specularLight4 = diffuseLight4 * pow(max(dot(worldNormal, halfway), 0), gSpecularPower);
+
+	// Sum the effect of the lights - add the ambient at this stage rather than for each light (or we will get too much ambient)
+    float3 diffuseLight = gAmbientColour + diffuseLight1 + diffuseLight2 + diffuseLight3 + diffuseLight4;
+    float3 specularLight = specularLight1 + specularLight2 + specularLight3 + specularLight4;
+    
     // Sample diffuse material colour for this pixel from a texture using a given sampler that you set up in the C++ code
     // Ignoring any alpha in the texture, just reading RGB
     float4 textureColour = DiffuseSpecularMap.Sample(TexSampler, offsetTexCoord); // Use offset texture coordinate from parallax mapping
     float3 diffuseMaterialColour = textureColour.rgb;
     float specularMaterialColour = textureColour.a;
 
-    float3 finalColour = (gAmbientColour + diffuseLight1 + diffuseLight2 + diffuseLight3) * diffuseMaterialColour +
-                         (specularLight1 + specularLight2 + specularLight3) * specularMaterialColour;
+    float3 finalColour = diffuseLight * diffuseMaterialColour + specularLight * specularMaterialColour;
 
     return float4(finalColour, 1.0f); // Always use 1.0f for alpha - no alpha blending in this lab
 }

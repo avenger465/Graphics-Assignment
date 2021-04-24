@@ -1,5 +1,15 @@
-﻿  Scene.cpp
-C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(528,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(529,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(531,63): warning C4305: 'argument': truncation from 'double' to 'const float'
+﻿  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Blending_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShadingOutline_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShading_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\DepthOnly_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\ParallaxMapping_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\PixelLighting_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureFading_ps.cso
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureScrolling_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\VertexWiggling_vs.hlsl(7,29-54): warning X3578: Output value 'main' is not completely initialized
+  
+  compilation object save succeeded; see C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\VertexWiggling_vs.cso
+  Scene.cpp
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(326,41): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Scene.cpp(676,83): warning C4305: 'argument': truncation from 'double' to 'const float'
   Skinning.vcxproj -> C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\Skinning.exe

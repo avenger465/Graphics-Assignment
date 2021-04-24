@@ -105,6 +105,7 @@ void Model::Setup(ID3D11VertexShader* VertexShader, ID3D11PixelShader* PixelShad
 	gD3DContext->PSSetShader(PixelShader, nullptr, 0);
 }
 
+//Set resources to be sent over to the pixel shader at  the given texture slots
 void Model::SetShaderResources(UINT TextureSlot, ID3D11ShaderResourceView* Texture, UINT NormalMapSlot, ID3D11ShaderResourceView* NormalMap)
 {
 	gD3DContext->PSSetShaderResources(TextureSlot, 1, &Texture);

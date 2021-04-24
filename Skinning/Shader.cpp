@@ -31,6 +31,7 @@ ID3D11PixelShader*  gParallaxMappingPixelShader  = nullptr;
 ID3D11PixelShader* gCellShadingOutlinePixelShader = nullptr;
 ID3D11PixelShader* gCellShadingPixelShader = nullptr;
 ID3D11VertexShader* gCellShadingOutlineVertexShader = nullptr;
+ID3D11PixelShader* gDepthOnlyPixelShader = nullptr;
 
 
 //--------------------------------------------------------------------------------------
@@ -58,12 +59,14 @@ bool LoadShaders()
     gCellShadingOutlinePixelShader  = LoadPixelShader("CellShadingOutline_ps");
     gCellShadingOutlineVertexShader = LoadVertexShader("CellShadingOutline_vs");
     gCellShadingPixelShader         = LoadPixelShader("CellShading_ps");
+    gDepthOnlyPixelShader = LoadPixelShader("DepthOnly_ps");
 
     if (gPixelLightingVertexShader  == nullptr || gPixelLightingPixelShader     == nullptr || gBlendingPixelShader       == nullptr ||
         gBasicTransformVertexShader == nullptr || gSkinningVertexShader         == nullptr || gLightModelPixelShader     == nullptr ||
         gWigglingVertexShader       == nullptr || gTextureScrollingPixelShader  == nullptr || gTextureFadingPixelShader  == nullptr ||
         gNormalMappingVertexShader  == nullptr || gNormalMappingPixelShader     == nullptr || gParallaxMappingPixelShader == nullptr ||
-        gCellShadingOutlinePixelShader == nullptr || gCellShadingOutlineVertexShader == nullptr || gCellShadingPixelShader == nullptr)
+        gCellShadingOutlinePixelShader == nullptr || gCellShadingOutlineVertexShader == nullptr || gCellShadingPixelShader == nullptr ||
+        gDepthOnlyPixelShader == nullptr)
     {
         gLastError = "Error loading shaders";
         return false;
@@ -90,6 +93,7 @@ void ReleaseShaders()
     if (gCellShadingOutlinePixelShader) gCellShadingOutlinePixelShader->Release();
     if (gCellShadingOutlineVertexShader) gCellShadingOutlineVertexShader->Release();
     if (gCellShadingPixelShader) gCellShadingPixelShader->Release();
+    if (gDepthOnlyPixelShader) gDepthOnlyPixelShader->Release();
 }
 
 // Load a vertex shader, include the file in the project and pass the name (without the .hlsl extension)

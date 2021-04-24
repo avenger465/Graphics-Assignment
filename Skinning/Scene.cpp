@@ -36,9 +36,11 @@
 const float ROTATION_SPEED = 2.0f;  // 2 radians per second for rotation
 const float MOVEMENT_SPEED = 50.0f; // 50 units per second for movement (what a unit of length is depends on 3D model - i.e. an artist decision usually)
 
+//Strength of the wiggle effect 
+const int WIGGLESTRENGTH = 2;
 
 // Meshes, models and cameras, same meaning as TL-Engine. Meshes prepared in InitGeometry function, Models & camera in InitScene
-Mesh* gCrateMesh;
+Mesh* gTeapotMesh;
 Mesh* gGroundMesh;
 Mesh* gNormalMappingMesh;
 Mesh* gLightMesh;
@@ -46,7 +48,7 @@ Mesh* gSphereMesh;
 Mesh* gCubeMesh;
 Mesh* gTrollMesh;
 
-Model* gCrate;
+Model* gTeapot;
 Model* gNormalMappingCube;
 Model* gGround;
 Model* gSphere;
@@ -60,17 +62,28 @@ Model* gTrollModel;
 Camera* gCamera;
 
 // Store lights in an array in this exercise
-const int NUM_LIGHTS = 3;
-CLight* gLights[NUM_LIGHTS]; 
-float LightsScale[NUM_LIGHTS] = { 10.0f, 10.0f, 10.0f};
+const int NUM_LIGHTS = 4;
 
+//Array of all the lights in the scene 
+CLight* gLights[NUM_LIGHTS]; 
+
+//Strengths for all the lights used in the scene, 
+//in an array because the light initialisation will be done in a loop
+float LightsScale[NUM_LIGHTS] = { 10.0f, 10.0f, 10.0f, 0.6f};
+
+//Colours for all the lights used in the scene, 
+//in an array because the light initialisation will be done in a loop
 CVector3 LightsColour[NUM_LIGHTS] = { {1.0f, 0.8f, 1.0f},
                                       {1.0f, 0.8f, 1.0f},
-                                      {1.0f, 1.0f, 1.0f} };
+                                      {1.0f, 1.0f, 1.0f},
+                                      {0.45f, 0.45f, 0.45f} };
 
+//Positions for all the lights used in the scene, 
+//in an array because the light initialisation will be done in a loop
 CVector3 LightsPosition[NUM_LIGHTS] = { { 30, 10, 0 },
                                         { -30, 20, 80 },
-                                        { 60, 20,0} };
+                                        { 60, 20,0},
+                                        { 100, 40, 40} };
 
 // Additional light information
 CVector3 gAmbientColour = { 0.2f, 0.2f, 0.3f }; // Background level of light (slightly bluish to match the far background, which is dark blue)
@@ -78,14 +91,26 @@ float    gSpecularPower = 256; // Specular power controls shininess - same for a
 
 ColourRGBA gBackgroundColor = { 0.2f, 0.2f, 0.3f, 1.0f };
 
-CVector3 OutlineColour = {1,1,0};
+//Used for Cell shading 
+CVector3 OutlineColour = {0,1,0};
 float OutlineThickness = 0.03f;
 
 // Variables controlling light1's orbiting of the cube
 const float gLightOrbit = 20.0f;
 const float gLightOrbitSpeed = 0.7f;
+
+//how deep the texture will look
 const float gParallaxDepth = 0.1f;
+
+//angle of the spotlights Field of View
 float gSpotlightConeAngle = 90.0f;
+
+//Size of the shadow to use (size of the texture)
+int gShadowMapSize = 1024;
+
+ID3D11Texture2D* gShadowMap1Texture = nullptr;
+ID3D11DepthStencilView* gShadowMap1DepthStencil = nullptr;
+ID3D11ShaderResourceView* gShadowMap1SRV = nullptr;
 
 //--------------------------------------------------------------------------------------
 // Constant Buffers
@@ -122,6 +147,18 @@ CTexture* CWallNormalHeight  = new CTexture();
 CTexture* CCellMapTexture    = new CTexture();
 CTexture* CTrollTexture      = new CTexture();
 
+// Get "camera-like" view matrix for a spotlight
+CMatrix4x4 CalculateLightViewMatrix(int lightIndex)
+{
+    return InverseAffine(gLights[lightIndex]->LightModel->WorldMatrix());
+}
+
+// Get "camera-like" projection matrix for a spotlight
+CMatrix4x4 CalculateLightProjectionMatrix(int lightIndex)
+{
+    return MakeProjectionMatrix(1.0f, ToRadians(gSpotlightConeAngle)); // Helper function in Utility\GraphicsHelpers.cpp
+}
+
 //--------------------------------------------------------------------------------------
 // Initialise scene geometry, constant buffers and states
 //--------------------------------------------------------------------------------------
@@ -133,7 +170,7 @@ bool InitGeometry()
     // Load mesh geometry data, just like TL-Engine this doesn't create anything in the scene. Create a Model for that.
     try 
     {
-        gCrateMesh           = new Mesh("Cube.x");
+        gTeapotMesh           = new Mesh("Teapot.x");
         gNormalMappingMesh   = new Mesh("Cube.x", true);
         gGroundMesh          = new Mesh("Ground.x");
         gLightMesh           = new Mesh("Light.x");
@@ -183,6 +220,56 @@ bool InitGeometry()
         return false;
     }
 
+    //**** Create Shadow Map texture ****//
+
+    // We also need a depth buffer to go with our portal
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = gShadowMapSize; // Size of the shadow map determines quality / resolution of shadows
+    textureDesc.Height = gShadowMapSize;
+    textureDesc.MipLevels = 1; // 1 level, means just the main texture, no additional mip-maps. Usually don't use mip-maps when rendering to textures (or we would have to render every level)
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R32_TYPELESS; // The shadow map contains a single 32-bit value [tech gotcha: have to say typeless because depth buffer and shaders see things slightly differently]
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.SampleDesc.Quality = 0;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D10_BIND_DEPTH_STENCIL | D3D10_BIND_SHADER_RESOURCE; // Indicate we will use texture as a depth buffer and also pass it to shaders
+    textureDesc.CPUAccessFlags = 0;
+    textureDesc.MiscFlags = 0;
+    if (FAILED(gD3DDevice->CreateTexture2D(&textureDesc, NULL, &gShadowMap1Texture)))
+    {
+        gLastError = "Error creating shadow map texture";
+        return false;
+    }
+
+    // Create the depth stencil view, i.e. indicate that the texture just created is to be used as a depth buffer
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT; // See "tech gotcha" above. The depth buffer sees each pixel as a "depth" float
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Texture2D.MipSlice = 0;
+    dsvDesc.Flags = 0;
+    if (FAILED(gD3DDevice->CreateDepthStencilView(gShadowMap1Texture, &dsvDesc, &gShadowMap1DepthStencil)))
+    {
+        gLastError = "Error creating shadow map depth stencil view";
+        return false;
+    }
+
+
+    // We also need to send this texture (resource) to the shaders. To do that we must create a shader-resource "view"
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // See "tech gotcha" above. The shaders see textures as colours, so shadow map pixels are not seen as depths
+                                           // but rather as "red" floats (one float taken from RGB). Although the shader code will use the value as a depth
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = 1;
+    if (FAILED(gD3DDevice->CreateShaderResourceView(gShadowMap1Texture, &srvDesc, &gShadowMap1SRV)))
+    {
+        gLastError = "Error creating shadow map shader resource view";
+        return false;
+    }
+
+
+    //*****************************//
+
   	// Create all filtering modes, blending modes etc. used by the app (see State.cpp/.h)
 	if (!CreateStates())
 	{
@@ -199,21 +286,21 @@ bool InitScene()
 {
     //// Set up scene ////
 
-    gCrate                        = new Model(gCrateMesh);
-    gGround                       = new Model(gGroundMesh);
-    gNormalMappingCube            = new Model(gNormalMappingMesh);
-    gSphere                       = new Model(gSphereMesh);
-    gLerpCube                     = new Model(gCubeMesh);
-    gAdditiveBlendingModel        = new Model(gCubeMesh);
-    gMultiplicativeBlendingModel  = new Model(gCubeMesh);
-    gAlphaBlendingModel           = new Model(gCubeMesh);
-    gParallaxMappingCube          = new Model(gNormalMappingMesh);
-    gTrollModel                   = new Model(gTrollMesh);
+    gTeapot = new Model(gTeapotMesh);
+    gGround = new Model(gGroundMesh);
+    gNormalMappingCube = new Model(gNormalMappingMesh);
+    gSphere = new Model(gSphereMesh);
+    gLerpCube = new Model(gCubeMesh);
+    gAdditiveBlendingModel = new Model(gCubeMesh);
+    gMultiplicativeBlendingModel = new Model(gCubeMesh);
+    gAlphaBlendingModel = new Model(gCubeMesh);
+    gParallaxMappingCube = new Model(gNormalMappingMesh);
+    gTrollModel = new Model(gTrollMesh);
 
-	// Initial positions
-	gCrate-> SetPosition({ 60, 5, 25 });
-	gCrate-> SetScale( 1.0f );
-	gCrate-> SetRotation({ 0.0f, 0/*ToRadians(-50.0f) */, 0.0f });
+    // Initial positions
+    gTeapot->SetPosition({ 60, 0, 25 });
+    gTeapot->SetScale(0.9f);
+    gTeapot->SetRotation({ 0.0f, 0/*ToRadians(-50.0f) */, 0.0f });
 
     gNormalMappingCube->SetPosition({ 18, 5, 68 });
     gNormalMappingCube->SetScale(1.0f);
@@ -223,9 +310,9 @@ bool InitScene()
     gSphere->SetScale(0.5f);
     gSphere->SetRotation({ 0.0f, 0/*ToRadians(-50.0f) */, 0.0f });
 
-    gLerpCube->SetPosition({18, 5, 32});
+    gLerpCube->SetPosition({ 18, 5, 32 });
     gLerpCube->SetScale(1.0f);
-    gLerpCube->SetRotation({0.0f, 0.0f, 0.0f});
+    gLerpCube->SetRotation({ 0.0f, 0.0f, 0.0f });
 
     gAdditiveBlendingModel->SetPosition({ -10, 5, 32 });
     gAdditiveBlendingModel->SetScale(1.0f);
@@ -252,9 +339,10 @@ bool InitScene()
     {
         gLights[i] = new CLight(gLightMesh, LightsScale[i], LightsColour[i], LightsPosition[i], pow(LightsScale[i], 0.7f));
     }
+    gLights[3]->LightModel->SetScale(pow(10, 0.7));
 
-
-    gLights[2]->LightModel->SetRotation({ToRadians(40.0f), 0.0f, 0.0f});
+    gLights[2]->LightModel->SetRotation({ ToRadians(40.0f), 0.0f, 0.0f });
+    gLights[3]->LightModel->SetRotation({0.0f, 0.0f, ToRadians(40)});
     //// Set up camera ////
 
     gCamera = new Camera();
@@ -297,7 +385,7 @@ void ReleaseResources()
 
     delete gCamera;                      gCamera                      = nullptr;
     delete gGround;                      gGround                      = nullptr;
-    delete gCrate;                       gCrate                       = nullptr;
+    delete gTeapot;                       gTeapot                       = nullptr;
     delete gNormalMappingCube;           gNormalMappingCube           = nullptr;
     delete gSphere;                      gSphere                      = nullptr;
     delete gLerpCube;                    gLerpCube                    = nullptr;
@@ -309,16 +397,55 @@ void ReleaseResources()
 
     delete gLightMesh;         gLightMesh         = nullptr;
     delete gGroundMesh;        gGroundMesh        = nullptr;
-    delete gCrateMesh;         gCrateMesh         = nullptr;
+    delete gTeapotMesh;         gTeapotMesh         = nullptr;
     delete gNormalMappingMesh; gNormalMappingMesh = nullptr;
     delete gSphereMesh;        gSphereMesh        = nullptr;
     delete gCubeMesh;          gCubeMesh          = nullptr;
     delete gTrollMesh;         gTrollMesh         = nullptr;
 }
 
+
 //--------------------------------------------------------------------------------------
 // Scene Rendering
 //--------------------------------------------------------------------------------------
+
+// Render the scene from the given light's point of view. Only renders depth buffer
+void RenderDepthBufferFromLight(int lightIndex)
+{
+    // Get camera-like matrices from the spotlight, seet in the constant buffer and send over to GPU
+    gPerFrameConstants.viewMatrix = CalculateLightViewMatrix(lightIndex);
+    gPerFrameConstants.projectionMatrix = CalculateLightProjectionMatrix(lightIndex);
+    gPerFrameConstants.viewProjectionMatrix = gPerFrameConstants.viewMatrix * gPerFrameConstants.projectionMatrix;
+    UpdateConstantBuffer(gPerFrameConstantBuffer, gPerFrameConstants);
+
+    // Indicate that the constant buffer we just updated is for use in the vertex shader (VS) and pixel shader (PS)
+    gD3DContext->VSSetConstantBuffers(0, 1, &gPerFrameConstantBuffer); // First parameter must match constant buffer number in the shader 
+    gD3DContext->PSSetConstantBuffers(0, 1, &gPerFrameConstantBuffer);
+
+
+    //// Only render models that cast shadows ////
+
+    // Use special depth-only rendering shaders
+    gD3DContext->VSSetShader(gBasicTransformVertexShader, nullptr, 0);
+    gD3DContext->PSSetShader(gDepthOnlyPixelShader, nullptr, 0);
+
+    // States - no blending, normal depth buffer and culling
+    gD3DContext->OMSetBlendState(gNoBlendingState, nullptr, 0xffffff);
+    gD3DContext->OMSetDepthStencilState(gUseDepthBufferState, 0);
+    gD3DContext->RSSetState(gCullBackState);
+
+    // Render models - no state changes required between each object in this situation (no textures used in this step)
+    gGround->Render();
+    gTeapot->Render();
+    gAdditiveBlendingModel->Render();
+    gAlphaBlendingModel->Render();
+    gSphere->Render();
+    gLerpCube->Render();
+    gNormalMappingCube->Render();
+    gParallaxMappingCube->Render();
+    gTrollModel->Render();
+    gMultiplicativeBlendingModel->Render();
+}
 
 // Render everything in the scene from the given camera
 void RenderSceneFromCamera(Camera* camera)
@@ -349,8 +476,8 @@ void RenderSceneFromCamera(Camera* camera)
     gGround->SetShaderResources(0, CGroundTexture->SRVMap);
     gGround->Render();
 
-    gCrate->SetShaderResources(0, CStoneTexture->SRVMap);
-    gCrate->Render();
+    gTeapot->SetShaderResources(0, CStoneTexture->SRVMap);
+    gTeapot->Render();
 
     //-------------------//
     // Additive Blending //
@@ -383,7 +510,7 @@ void RenderSceneFromCamera(Camera* camera)
     //----------------//
 
     gLerpCube->Setup(gPixelLightingVertexShader, gTextureFadingPixelShader);
-    gLerpCube->SetShaderResources(0,CBrickTexture->SRVMap , 1, CGroundTexture->SRVMap);
+    gLerpCube->SetShaderResources(0,CBrickTexture->SRVMap , 2, CGroundTexture->SRVMap);
     gLerpCube->SetStates(gNoBlendingState, gUseDepthBufferState, gCullBackState);
     gLerpCube->Render();
 
@@ -392,11 +519,11 @@ void RenderSceneFromCamera(Camera* camera)
     //----------------//
 
     gNormalMappingCube->Setup(gNormalMappingVertexShader, gNormalMappingPixelShader);
-    gNormalMappingCube->SetShaderResources(0, CPatternTexture->SRVMap,1, CPatternNormal->SRVMap);
+    gNormalMappingCube->SetShaderResources(0, CPatternTexture->SRVMap,2, CPatternNormal->SRVMap);
     gNormalMappingCube->Render();
 
     gParallaxMappingCube->Setup(gParallaxMappingPixelShader);
-    gParallaxMappingCube->SetShaderResources(0, CWallTexture->SRVMap, 1, CWallNormalHeight->SRVMap);
+    gParallaxMappingCube->SetShaderResources(0, CWallTexture->SRVMap, 2, CWallNormalHeight->SRVMap);
     gParallaxMappingCube->Render();
 
     //-----------------------------------//
@@ -413,7 +540,7 @@ void RenderSceneFromCamera(Camera* camera)
 
     gTrollModel->Setup(gPixelLightingVertexShader, gCellShadingPixelShader);
     gTrollModel->SetStates(gNoBlendingState, gUseDepthBufferState, gCullBackState);
-    gTrollModel->SetShaderResources(0, CTrollTexture->SRVMap, 1, CCellMapTexture->SRVMap);
+    gTrollModel->SetShaderResources(0, CTrollTexture->SRVMap, 2, CCellMapTexture->SRVMap);
     gD3DContext->PSSetSamplers(0, 1, &gAnisotropic4xSampler);
     gD3DContext->PSSetSamplers(1, 1, &gPointSampler);
     gTrollModel->Render();
@@ -460,7 +587,6 @@ void RenderScene()
     gPerFrameConstants.light1.Colour = gLights[0]->LightColour * gLights[0]->LightStrength;
     gPerFrameConstants.light1.Position = gLights[0]->LightModel->Position();
 
-
     gPerFrameConstants.light2.Colour = gLights[1]->LightColour * gLights[1]->LightStrength;
     gPerFrameConstants.light2.Position = gLights[1]->LightModel->Position();
 
@@ -468,6 +594,12 @@ void RenderScene()
     gPerFrameConstants.light3.Position = gLights[2]->LightModel->Position();
     gPerFrameConstants.light3.Direction = Normalise(gLights[2]->LightModel->WorldMatrix().GetZAxis());
     gPerFrameConstants.light3.CosHalfAngle = cos(ToRadians(gSpotlightConeAngle / 4));
+    gPerFrameConstants.light3.lightViewMatrix = CalculateLightViewMatrix(2);
+    gPerFrameConstants.light3.lightProjectionMatrix = CalculateLightProjectionMatrix(2);
+
+    gPerFrameConstants.light4.Colour = gLights[3]->LightColour * gLights[3]->LightStrength;
+    gPerFrameConstants.light4.Position = gLights[3]->LightModel->Position();
+    gPerFrameConstants.light4.Direction = Normalise(-gLights[3]->LightModel->WorldMatrix().GetXAxis());
 
     gPerFrameConstants.ambientColour  = gAmbientColour;
     gPerFrameConstants.specularPower  = gSpecularPower;
@@ -476,6 +608,27 @@ void RenderScene()
     gPerFrameConstants.parallaxDepth = gParallaxDepth;
     gPerFrameConstants.outlineColour = OutlineColour;
     gPerFrameConstants.outlineThickness = OutlineThickness;
+
+    gPerFrameConstants.DepthAdjust = 0.0005f;
+
+
+    // Setup the viewport to the size of the shadow map texture
+    D3D11_VIEWPORT vp;
+    vp.Width = static_cast<FLOAT>(gShadowMapSize);
+    vp.Height = static_cast<FLOAT>(gShadowMapSize);
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = 0;
+    vp.TopLeftY = 0;
+    gD3DContext->RSSetViewports(1, &vp);
+
+    // Select the shadow map texture as the current depth buffer. We will not be rendering any pixel colours
+    // Also clear the the shadow map depth buffer to the far distance
+    gD3DContext->OMSetRenderTargets(0, nullptr, gShadowMap1DepthStencil);
+    gD3DContext->ClearDepthStencilView(gShadowMap1DepthStencil, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+    // Render the scene from the point of view of light 1 (only depth values written)
+    RenderDepthBufferFromLight(2);
 
     //// Main scene rendering ////
 
@@ -488,7 +641,6 @@ void RenderScene()
     gD3DContext->ClearDepthStencilView(gDepthStencil, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
     // Setup the viewport to the size of the main window
-    D3D11_VIEWPORT vp;
     vp.Width  = static_cast<FLOAT>(gViewportWidth);
     vp.Height = static_cast<FLOAT>(gViewportHeight);
     vp.MinDepth = 0.0f;
@@ -497,10 +649,16 @@ void RenderScene()
     vp.TopLeftY = 0;
     gD3DContext->RSSetViewports(1, &vp);
 
+    gD3DContext->PSSetShaderResources(1, 1, &gShadowMap1SRV);
+    gD3DContext->PSSetSamplers(1, 1, &gPointSampler);
 
     // Render the scene from the main camera
     RenderSceneFromCamera(gCamera);
 
+
+    // Unbind shadow maps from shaders - prevents warnings from DirectX when we try to render to the shadow maps again next frame
+    ID3D11ShaderResourceView* nullView = nullptr;
+    gD3DContext->PSSetShaderResources(1, 1, &nullView);
 
     //// Scene completion ////
 
@@ -521,22 +679,26 @@ void UpdateScene(float frameTime)
     // Orbit the light - a bit of a cheat with the static variable [ask the tutor if you want to know what this is]
     static float rotate = 0.0f;
     static bool go = true;
+    static float PI = 3.14f;
     //gLights[0].model->SetPosition( gCrate->Position() + CVector3{ cos(rotate) * gLightOrbit, 10, sin(rotate) * gLightOrbit } );
     if (go)  rotate -= gLightOrbitSpeed * frameTime;
     if (KeyHit(Key_1))  go = !go;
 
-    float wig = sin(((2 * cos(rotate) + 3) * 3.14 / 2) + 1);
-    float wig2 = cos(((2 * cos(rotate) + 3) * 3.14 / 2) + 1);
+    //Performs a sin and cos calculation and clamps the value between -1 and 1
+    float sinBlueColour = sin(((rotate + 3) * PI) + 1);
+    float cosGreenColour = cos(((rotate + 3) * PI) + 1);
 
-    gLights[0]->LightColour = CVector3 {0.3, wig2 / 3, wig / 3};
+    //Divide by three to allow the colours to change gradually
+    gLights[0]->LightColour = CVector3 {0.3, cosGreenColour / 3, sinBlueColour / 3};
               
-    gLights[1]->LightStrength = float((sin((2 * rotate + 3) * 3.14 / 2) + 1) / 2) * 50;
+    gLights[1]->LightStrength = float((sin((rotate + 3) * PI) + 1)) * 50;
 
-    gPerFrameConstants.Wiggle += 6 * frameTime;
+    gPerFrameConstants.Wiggle += WIGGLESTRENGTH * frameTime;
 
 	// Control camera (will update its view matrix)
 	gCamera->Control(frameTime, Key_Up, Key_Down, Key_Left, Key_Right, Key_W, Key_S, Key_A, Key_D );
-    gCrate->Control(NULL, frameTime, Key_I, Key_K, Key_J, Key_L, Key_U, Key_O, Key_Period, Key_Comma);
+    gTeapot->Control(NULL, frameTime, Key_I, Key_K, Key_J, Key_L, Key_U, Key_O, Key_Period, Key_Comma);
+    gLights[2]->LightModel->Control(NULL, frameTime, Key_T, Key_G, Key_F, Key_H, Key_R, Key_Y, Key_B, Key_N);
 
     // Show frame time / FPS in the window title //
     const float fpsUpdateTime = 0.5f; // How long between updates (in seconds)
@@ -552,7 +714,7 @@ void UpdateScene(float frameTime)
         frameTimeMs.precision(2);
         frameTimeMs << std::fixed << avgFrameTime * 1000;
         std::string windowTitle = "CO2409 Week 22: Skinning - Frame Time: " + frameTimeMs.str() +
-                                  "ms, FPS: " + std::to_string(static_cast<int>(1 / avgFrameTime + 0.5f));
+                                  "ms, FPS: " + std::to_string(static_cast<int>(1 / avgFrameTime + 0.5f)) + " FFFFF " + std::to_string(static_cast<float>(gLights[1]->LightStrength));
         SetWindowTextA(gHWnd, windowTitle.c_str());
         totalFrameTime = 0;
         frameCount = 0;

@@ -30,6 +30,7 @@ extern ID3D11PixelShader* gParallaxMappingPixelShader;
 extern ID3D11PixelShader* gCellShadingOutlinePixelShader;
 extern ID3D11VertexShader* gCellShadingOutlineVertexShader;
 extern ID3D11PixelShader* gCellShadingPixelShader;
+extern ID3D11PixelShader* gDepthOnlyPixelShader;
 
 
 //--------------------------------------------------------------------------------------

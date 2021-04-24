@@ -58,6 +58,12 @@ struct Light
 
     CVector3 diffuse;
     float Padding3;
+
+    CVector3 Ambient;
+    float Padding4;
+
+    CMatrix4x4 lightViewMatrix;
+    CMatrix4x4 lightProjectionMatrix;
 };
 
 //--------------------------------------------------------------------------------------
@@ -78,6 +84,7 @@ struct PerFrameConstants
     Light light1;
     Light light2;
     Light light3;
+    Light light4;
 
     CVector3 Intensity;
     float Wiggle;
@@ -90,6 +97,9 @@ struct PerFrameConstants
 
     CVector3 outlineColour;
     float outlineThickness;
+
+    float DepthAdjust;
+    CVector3 Padding1;
 };
 
 extern PerFrameConstants gPerFrameConstants;      // This variable holds the CPU-side constant buffer described above

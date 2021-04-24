@@ -28,3 +28,4 @@ C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\TextureFading_ps.cs
 C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShadingOutline_ps.cso
 C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShadingOutline_vs.cso
 C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\CellShading_ps.cso
+C:\Users\aveng\Documents\GitHub\Graphics-Assignment\Skinning\DepthOnly_ps.cso
